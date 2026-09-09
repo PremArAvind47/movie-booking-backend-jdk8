@@ -10,13 +10,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t movie-booking-backend .'
+                sh 'DOCKER_BUILDKIT=0 docker build -t movie-booking-backend .'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d --build'
+                sh 'DOCKER_BUILDKIT=0 docker compose up -d --build'
             }
         }
     }
