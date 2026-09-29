@@ -18,13 +18,13 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub',
                                                   usernameVariable: 'DOCKER_USER',
                                                   passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                        echo "DOCKERPASS"|dockerlogin-u"DOCKER_USER" --password-stdin
-                        docker tag movie-booking-backend DOCKERUSER/movie-booking-backend:vBUILD_NUMBER
-                        docker tag movie-booking-backend $DOCKER_USER/movie-booking-backend:latest
-                        docker push DOCKERUSER/movie-booking-backend:vBUILD_NUMBER
-                        docker push $DOCKER_USER/movie-booking-backend:latest
-                    '''
+                             sh '''
+                                 echo "DOCKERPASS"|dockerlogin-u"DOCKER_USER" --password-stdin
+                                 docker tag movie-booking-backend DOCKERUSER/movie-booking-backend:vBUILD_NUMBER
+                                 docker tag movie-booking-backend $DOCKER_USER/movie-booking-backend:latest
+                                 docker push DOCKERUSER/movie-booking-backend:vBUILD_NUMBER
+                                 docker push $DOCKER_USER/movie-booking-backend:latest
+                             '''
                 }
             }
         }
