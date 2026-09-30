@@ -30,9 +30,15 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh 'DOCKER_BUILDKIT=0 docker-compose up -d --build'
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        kubectl apply -f k8s/service.yaml
+                        sed "s|:latest|:v$BUILD_NUMBER|" k8s/deployment.yaml | kubectl apply -f -
+                        kubectl rollout status deployment/movie-booking-backend --timeout=180s
+                    '''
+                }
             }
         }
     }
