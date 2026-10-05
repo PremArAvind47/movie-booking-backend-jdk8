@@ -3,6 +3,7 @@ target/
 .smarttomcat/
 *.iml
 *.log
+logs/
 .metadata/
 
 jdk21-installer.msi
