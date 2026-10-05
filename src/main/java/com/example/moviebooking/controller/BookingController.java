@@ -1,18 +1,21 @@
 package com.example.moviebooking.controller;
 
 import com.example.moviebooking.dto.BookingRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = "*")
 public class BookingController {
 
+    private static final Logger log = LoggerFactory.getLogger(BookingController.class);
+
     @PostMapping("/api/bookings")
     public String createBooking(@RequestBody BookingRequest request) {
 
-        System.out.println(request.getMovieName());
-        System.out.println(request.getDate());
-        System.out.println(request.getTime());
+        log.info("Booking request: movie={}, date={}, time={}",
+                request.getMovieName(), request.getDate(), request.getTime());
 
         return "Booking created";
     }
