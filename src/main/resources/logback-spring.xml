@@ -13,8 +13,6 @@
   folders being created. For real use, change both fileNamePattern values to
   %d{yyyy-MM-dd} (one folder per day) and maxHistory to 30 / 90 days.
   Note: a roll happens on the first log line written after the minute changes.
-
-  Every line carries the request id (see RequestLoggingFilter).
 -->
 <configuration scan="false">
 
@@ -22,7 +20,7 @@
     <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="./logs"/>
 
     <property name="PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${APP_NAME}] [%thread] [req:%X{requestId:--}] %logger{40} - %msg%n"/>
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${APP_NAME}] [%thread] %logger{40} - %msg%n"/>
 
     <!-- Console: what you see in IntelliJ / docker logs / kubectl logs -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
