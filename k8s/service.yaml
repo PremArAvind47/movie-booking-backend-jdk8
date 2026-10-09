@@ -3,10 +3,9 @@ kind: Service
 metadata:
   name: movie-booking-backend
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: movie-booking-backend
   ports:
-    - port: 8080
+    - port: 9096
       targetPort: 8080
-      nodePort: 30080
