@@ -89,3 +89,28 @@ Often says "you do it" for code edits, but wants commands only when working in g
 1. Run and confirm the Part 5 `/ai/search` test, then start Part 6.
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
+
+## Claude's memory (read this first in a new session)
+This section is for Claude only. Update it whenever something worth remembering comes up.
+
+**How to work with this user**
+- Be honest and straightforward. Say plainly what was and wasn't done or read. No guessing presented as fact.
+- Use simple words and short answers. The user says English is not their strongest language. Avoid heavy jargon.
+- The user is here to learn. When they say "you do it", make the edit. Otherwise explain and let them do the step.
+- When working in git, give commands only if asked. Commit and push directly to `main` (the user said so).
+  Don't create other branches or PRs unless asked.
+- Before editing code, say what changed. The user wants to see what changed.
+- A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
+
+**Environment limits learned**
+- Cloud sessions can't see the user's local folders (`D:\PAD4U`, `C:\PremAravind\D--PAD4U`). Anything local must be pushed to the repo first.
+- Cloud sessions can't run the app against the user's Ollama (it runs on their laptop).
+- Deleting a remote branch from the cloud session failed twice ("remote end hung up"). The user must delete it on GitHub.
+- Other Claude sessions can be read with the session tools. The older sessions were `session_01R4N35QexvKTpzLcSQ5mj37` ("ga")
+  and `session_01LeGxRFxQk7s3GYeCh8TEAg` ("gacode"). Read them with `list_events`, filtered to `user` and `assistant`.
+  Results are huge, so save to a file and extract the text with a script.
+
+**Status**
+- Last confirmed: Part 4 tested. Part 5 coded, `/ai/search` test not yet confirmed by the user.
+- Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
+- Leftover: branch `claude/chat-review-p0to71` still exists on GitHub (same commit is on `main`). The user should delete it.
