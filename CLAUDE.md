@@ -25,7 +25,8 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Last confirmed: Part 4 tested. Part 5 coded, `/ai/search` test not yet confirmed by the user.
+- Last confirmed: Parts 0-5 done and tested (12 Oct 2026). Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
+- User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
 - Leftover: branch `claude/chat-review-p0to71` still exists on GitHub (same commit is on `main`). The user should delete it.
 
@@ -71,7 +72,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 
 ## 24-part plan and progress
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
-3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (coded + compiled, **test not confirmed**) |
+3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, tested) |
 6 Document processing/chunking | 7 RAG | 8 RAG engineering | 9 Memory | 10 Tool calling |
 11 Agentic AI | 12 Multimodal | 13 Hallucination + grounding | 14 Guardrails + security |
 15 Testing + evaluation | 16 Observability | 17 Performance | 18 Cost + model selection |
@@ -117,6 +118,6 @@ Often says "you do it" for code edits, but wants commands only when working in g
 | `/ai/search?query=..` | Semantic search over 5 sample movies |
 
 ## Open items
-1. Run and confirm the Part 5 `/ai/search` test, then start Part 6.
+1. Start Part 6 (document processing / chunking). Part 8 will cover Top-K (default search returns 4).
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
