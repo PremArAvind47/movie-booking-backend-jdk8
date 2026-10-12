@@ -14,6 +14,7 @@ then commit and push directly to `main`.
 - When working in git, give commands only if asked. Commit and push directly to `main` (the user said so).
   Don't create other branches or PRs unless asked.
 - Before editing code, say what changed. The user wants to see what changed.
+- **A part is only DONE when (1) the code works AND (2) the user says they understand it.** Never move to the next part just because the code runs. Explain, ask a check question, and wait for the user to confirm.
 - A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
 
 **Environment limits learned**
@@ -25,7 +26,8 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Last confirmed: Parts 0-5 done and tested (12 Oct 2026). Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
+- Parts 0-4: done. Part 5: code works (tested 12 Oct 2026) but the user's UNDERSTANDING is not yet confirmed, so it is NOT done. Stay on Part 5 until they say they understand.
+- Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
 - Leftover: branch `claude/chat-review-p0to71` still exists on GitHub (same commit is on `main`). The user should delete it.
@@ -72,7 +74,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 
 ## 24-part plan and progress
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
-3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, tested) |
+3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (code works, understanding not confirmed) |
 6 Document processing/chunking | 7 RAG | 8 RAG engineering | 9 Memory | 10 Tool calling |
 11 Agentic AI | 12 Multimodal | 13 Hallucination + grounding | 14 Guardrails + security |
 15 Testing + evaluation | 16 Observability | 17 Performance | 18 Cost + model selection |
@@ -118,6 +120,6 @@ Often says "you do it" for code edits, but wants commands only when working in g
 | `/ai/search?query=..` | Semantic search over 5 sample movies |
 
 ## Open items
-1. Start Part 6 (document processing / chunking). Part 8 will cover Top-K (default search returns 4).
+1. Finish teaching Part 5 until the user understands. Only then start Part 6. Part 8 will cover Top-K (default search returns 4).
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
