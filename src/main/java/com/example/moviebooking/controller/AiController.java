@@ -6,7 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,11 +26,14 @@ public class AiController {
     private final ChatClient chatClient;
     private final EmbeddingModel embeddingModel;
     private final VectorStore vectorStore;
+    private final Resource moviesFile;
 
-    public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore) {
+    public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
+                        @Value("classpath:movies.txt") Resource moviesFile) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
+        this.moviesFile = moviesFile;
     }
 
     @GetMapping("/ai")
@@ -79,5 +85,14 @@ public class AiController {
     public List<String> search(@RequestParam String query) {
         List<Document> results = vectorStore.similaritySearch(query);
         return results.stream().map(Document::getText).toList();
+    }
+
+    @GetMapping("/ai/read-file")
+    public Map<String, Object> readFile() {
+        List<Document> documents = new TextReader(moviesFile).get();
+        return Map.of(
+                "documents", documents.size(),
+                "characters", documents.get(0).getText().length()
+        );
     }
 }
