@@ -99,6 +99,22 @@ public class AiController {
 
     @GetMapping("/ai/chunks")
     public Map<String, Object> chunks() {
+        List<Document> chunks = splitFileIntoChunks();
+
+        return Map.of(
+                "chunkCount", chunks.size(),
+                "chunks", chunks.stream().map(Document::getText).toList()
+        );
+    }
+
+    @GetMapping("/ai/load-file")
+    public Map<String, Object> loadFile() {
+        List<Document> chunks = splitFileIntoChunks();
+        vectorStore.add(chunks);   // each chunk is turned into numbers and stored
+        return Map.of("storedChunks", chunks.size());
+    }
+
+    private List<Document> splitFileIntoChunks() {
         List<Document> documents = new TextReader(moviesFile).get();
         String wholeText = documents.get(0).getText();
 
@@ -111,10 +127,6 @@ public class AiController {
                 chunks.add(new Document(piece.trim()));
             }
         }
-
-        return Map.of(
-                "chunkCount", chunks.size(),
-                "chunks", chunks.stream().map(Document::getText).toList()
-        );
+        return chunks;
     }
 }
