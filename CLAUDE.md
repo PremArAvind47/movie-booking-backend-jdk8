@@ -15,6 +15,7 @@ then commit and push directly to `main`.
   Don't create other branches or PRs unless asked.
 - Before editing code, say what changed. The user wants to see what changed.
 - **A part is only DONE when (1) the code works AND (2) the user says they understand it.** Never move to the next part just because the code runs. Explain, ask a check question, and wait for the user to confirm.
+- Lesson learned: the user gets lost when I explain library internals. Explain only what THEY need, with everyday analogies, and check understanding with a question in their own words. Always compile-check or say "not compiled" before giving code (I once gave wrong code: `vectorStore.add(movie)` needs a List).
 - A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
 
 **Environment limits learned**
@@ -26,7 +27,7 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Parts 0-4: done. Part 5: code works (tested 12 Oct 2026) but the user's UNDERSTANDING is not yet confirmed, so it is NOT done. Stay on Part 5 until they say they understand.
+- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Current: user asked how to return 1 result instead of 4 (topK, a small Part 5 extension / Part 8 topic).
 - Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
@@ -74,7 +75,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 
 ## 24-part plan and progress
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
-3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (code works, understanding not confirmed) |
+3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, understood) |
 6 Document processing/chunking | 7 RAG | 8 RAG engineering | 9 Memory | 10 Tool calling |
 11 Agentic AI | 12 Multimodal | 13 Hallucination + grounding | 14 Guardrails + security |
 15 Testing + evaluation | 16 Observability | 17 Performance | 18 Cost + model selection |
@@ -120,6 +121,6 @@ Often says "you do it" for code edits, but wants commands only when working in g
 | `/ai/search?query=..` | Semantic search over 5 sample movies |
 
 ## Open items
-1. Finish teaching Part 5 until the user understands. Only then start Part 6. Part 8 will cover Top-K (default search returns 4).
+1. Start Part 6 once the user is ready. Part 8 will cover Top-K (default search returns 4).
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
