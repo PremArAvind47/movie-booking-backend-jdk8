@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,27 @@ public class AiController {
         return Map.of(
                 "documents", documents.size(),
                 "characters", documents.get(0).getText().length()
+        );
+    }
+
+    @GetMapping("/ai/chunks")
+    public Map<String, Object> chunks() {
+        List<Document> documents = new TextReader(moviesFile).get();
+        String wholeText = documents.get(0).getText();
+
+        // cut at every blank line (one paragraph = one chunk)
+        String[] pieces = wholeText.split("\\R\\s*\\R");
+
+        List<Document> chunks = new ArrayList<>();
+        for (String piece : pieces) {
+            if (!piece.isBlank()) {
+                chunks.add(new Document(piece.trim()));
+            }
+        }
+
+        return Map.of(
+                "chunkCount", chunks.size(),
+                "chunks", chunks.stream().map(Document::getText).toList()
         );
     }
 }
