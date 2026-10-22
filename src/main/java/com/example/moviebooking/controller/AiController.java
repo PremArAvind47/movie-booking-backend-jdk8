@@ -10,11 +10,9 @@ import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,48 +132,5 @@ public class AiController {
             }
         }
         return chunks;
-    }
-
-    @GetMapping("/ai/chunks-by-size")
-    public Map<String, Object> chunksBySize(@RequestParam int size, @RequestParam int overlap) {
-        if (size <= 0 || overlap < 0 || overlap >= size) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "size must be more than 0, and overlap must be 0 or more and less than size");
-        }
-        String wholeText = new TextReader(moviesFile).get().get(0).getText();
-        List<String> chunks = splitBySize(wholeText, size, overlap);
-
-        return Map.of(
-                "size", size,
-                "overlap", overlap,
-                "chunkCount", chunks.size(),
-                "chunks", chunks
-        );
-    }
-
-    // cut every "size" characters, but start each new chunk "overlap" characters earlier
-    private List<String> splitBySize(String text, int size, int overlap) {
-        List<String> chunks = new ArrayList<>();
-        int start = 0;
-        while (start < text.length()) {
-            int end = Math.min(start + size, text.length());
-            chunks.add(text.substring(start, end).trim());
-            if (end == text.length()) {
-                break;
-            }
-            start = end - overlap;
-        }
-        return chunks;
-    }
-
-    @GetMapping("/ai/search-detail")
-    public List<Map<String, Object>> searchDetail(@RequestParam String query) {
-        List<Document> results = vectorStore.similaritySearch(query);
-        return results.stream()
-                .map(doc -> Map.of(
-                        "text", doc.getText(),
-                        "score", doc.getScore() == null ? 0.0 : doc.getScore(),
-                        "metadata", doc.getMetadata()))
-                .toList();
     }
 }

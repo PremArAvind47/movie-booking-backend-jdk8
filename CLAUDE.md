@@ -28,7 +28,7 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6 in progress: code pushed (read file, paragraph chunks + metadata, /ai/load-file, plus extras /ai/chunks-by-size and /ai/search-detail); user has NOT yet run the Part 6 tests or confirmed understanding. Part 6 is NOT done.
+- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6 in progress: code pushed (read file, paragraph chunks + metadata, /ai/load-file)  Extras /ai/chunks-by-size and /ai/search-detail were REMOVED at the user's request.; user has NOT yet run the Part 6 tests or confirmed understanding. Part 6 is NOT done.
 - Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
