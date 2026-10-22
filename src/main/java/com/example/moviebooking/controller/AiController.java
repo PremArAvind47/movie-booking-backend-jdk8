@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class AiController {
@@ -132,5 +133,24 @@ public class AiController {
             }
         }
         return chunks;
+    }
+
+    @GetMapping("/ai/ask")
+    public String ask(@RequestParam String question) {
+        // 1. find the chunks closest in meaning to the question
+        List<Document> found = vectorStore.similaritySearch(question);
+
+        // 2. join their text into one block of information
+        String information = found.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+
+        // 3. give the information + question to Llama
+        return chatClient
+                .prompt()
+                .system("Answer the question using only the information given. Keep the answer short.")
+                .user("Information:\n" + information + "\n\nQuestion: " + question)
+                .call()
+                .content();
     }
 }
