@@ -16,6 +16,7 @@ then commit and push directly to `main`.
 - Before editing code, say what changed. The user wants to see what changed.
 - **A part is only DONE when (1) the code works AND (2) the user says they understand it.** Never move to the next part just because the code runs. Explain, ask a check question, and wait for the user to confirm.
 - Lesson learned: the user gets lost when I explain library internals. Explain only what THEY need, with everyday analogies, and check understanding with a question in their own words. Always compile-check or say "not compiled" before giving code (I once gave wrong code: `vectorStore.add(movie)` needs a List).
+- **Do only what the plan needs. No extra endpoints, features or "bonus" code unless the user asks.** (User said this on 22 Oct 2026 after I added extra endpoints in Part 6.)
 - A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
 
 **Environment limits learned**
@@ -27,7 +28,7 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Current: user asked how to return 1 result instead of 4 (topK, a small Part 5 extension / Part 8 topic).
+- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6 in progress: code pushed (read file, paragraph chunks + metadata, /ai/load-file, plus extras /ai/chunks-by-size and /ai/search-detail); user has NOT yet run the Part 6 tests or confirmed understanding. Part 6 is NOT done.
 - Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). Next: Part 6 (document processing / chunking).
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
