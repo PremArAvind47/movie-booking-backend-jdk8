@@ -16,6 +16,7 @@ then commit and push directly to `main`.
 - Before editing code, say what changed. The user wants to see what changed.
 - **A part is only DONE when (1) the code works AND (2) the user says they understand it.** Never move to the next part just because the code runs. Explain, ask a check question, and wait for the user to confirm.
 - Lesson learned: the user gets lost when I explain library internals. Explain only what THEY need, with everyday analogies, and check understanding with a question in their own words. Always compile-check or say "not compiled" before giving code (I once gave wrong code: `vectorStore.add(movie)` needs a List).
+- Test lesson: the store is in memory, so after every app restart `/ai/load-file` must be called again. A test is only meaningful if the answer can NOT come from the model's own training (I wrongly said RAG worked on a Titanic question Llama already knew).
 - **Do only what the plan needs. No extra endpoints, features or "bonus" code unless the user asks.** (User said this on 22 Oct 2026 after I added extra endpoints in Part 6.)
 - A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
 
@@ -28,7 +29,7 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6: DONE (user confirmed 22 Oct 2026). Added: movies.txt in resources, TextReader, paragraph chunks with metadata, /ai/load-file stores chunks (call once per app start). Extras were removed at the user's request. Part 7 (RAG): code pushed 22 Oct 2026 (`/ai/ask?question=...`: similaritySearch, join chunk text, system+user prompt to Llama). NOT yet tested by the user and understanding NOT confirmed, so Part 7 is NOT done.
+- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6: DONE (user confirmed 22 Oct 2026). Added: movies.txt in resources, TextReader, paragraph chunks with metadata, /ai/load-file stores chunks (call once per app start). Extras were removed at the user's request. Part 7 (RAG): DONE (user confirmed 22 Oct 2026). `/ai/ask?question=...` = similaritySearch, join chunk text, system+user prompt to Llama. Verified with a question only the file answers ("one hour = seven years") AFTER calling /ai/load-file. Known weakness for Part 8: llama3.2 (3B) can garble facts and ignore "use only the information"; default search returns 4 chunks incl. irrelevant ones. Next: Part 8 (RAG engineering).
 - Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). 
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
@@ -77,7 +78,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 ## 24-part plan and progress
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
 3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, understood) |
-6 Document processing/chunking (done, understood) | 7 RAG (code pushed, needs user test + understanding) | 8 RAG engineering | 9 Memory | 10 Tool calling |
+6 Document processing/chunking (done, understood) | 7 RAG (done, understood) | 8 RAG engineering (next) | 9 Memory | 10 Tool calling |
 11 Agentic AI | 12 Multimodal | 13 Hallucination + grounding | 14 Guardrails + security |
 15 Testing + evaluation | 16 Observability | 17 Performance | 18 Cost + model selection |
 19 Cloud vs local | 20 Fine-tuning | 21 Production engineering | 22 Complete architecture |
@@ -93,6 +94,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
   Returned `{"movie":"Interstellar","genre":"Science Fiction"}`.
 - **Part 4** `spring.ai.ollama.embedding.model=nomic-embed-text`, `/ai/embed?text=...` returned 768 numbers.
 - **Part 6** `src/main/resources/movies.txt`, `TextReader` reads it, `splitFileIntoChunks()` cuts it at blank lines into `Document`s with metadata (source, chunkNumber), `/ai/load-file` adds them to the vector store.
+- **Part 7** `/ai/ask`: RAG. Find chunks -> join text -> chatClient system rule + user (information + question) -> answer.
 - **Part 5** `VectorStoreConfig` (in-memory `SimpleVectorStore`, 5 sample movies, embedded at startup) and
   `/ai/search?query=...`. Next step is to run
   `http://localhost:8080/ai/search?query=space and time travel`. Expect Interstellar and/or Inception.
@@ -127,6 +129,6 @@ Often says "you do it" for code edits, but wants commands only when working in g
 | `/ai/load-file` | Store the chunks in the vector store (call once per app start) |
 
 ## Open items
-1. Part 7 (RAG): user to test /ai/ask (after /ai/load-file) and confirm understanding. Part 8 will cover Top-K (default search returns 4).
+1. Start Part 8 (RAG engineering): Top-K, relevant vs irrelevant chunks, "I don't know" behaviour, better chunks.
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
