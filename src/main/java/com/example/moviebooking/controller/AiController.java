@@ -125,10 +125,10 @@ public class AiController {
         String[] pieces = wholeText.split("\\R\\s*\\R");
 
         List<Document> chunks = new ArrayList<>();
+        // metadata = extra label on the chunk (which file it came from, which number it is)
+        Map<String, Object> metadata = new HashMap<>(documents.get(0).getMetadata());
         for (String piece : pieces) {
             if (!piece.isBlank()) {
-                // metadata = extra label on the chunk (which file it came from, which number it is)
-                Map<String, Object> metadata = new HashMap<>(documents.get(0).getMetadata());
                 metadata.put("chunkNumber", chunks.size() + 1);
                 chunks.add(new Document(piece.trim(), metadata));
             }
