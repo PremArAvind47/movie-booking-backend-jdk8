@@ -4,6 +4,8 @@ import com.example.moviebooking.dto.MovieInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.TextReader;
@@ -35,17 +37,20 @@ public class AiController {
     private final Resource moviesFile;
     private final int topK;
     private final double minScore;
+    private final MessageChatMemoryAdvisor memoryAdvisor;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
                         @Value("${rag.top-k}") int topK,
-                        @Value("${rag.min-score}") double minScore) {
+                        @Value("${rag.min-score}") double minScore,
+                        ChatMemory chatMemory) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
         this.moviesFile = moviesFile;
         this.topK = topK;
         this.minScore = minScore;
+        this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
 
     @GetMapping("/ai")
@@ -145,8 +150,19 @@ public class AiController {
         return chunks;
     }
 
+    @GetMapping("/ai/chat")
+    public String chat(@RequestParam String conversationId, @RequestParam String message) {
+        return chatClient
+                .prompt()
+                .advisors(memoryAdvisor)                                        // turn memory on
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))   // whose memory
+                .user(message)
+                .call()
+                .content();
+    }
+
     @GetMapping("/ai/ask")
-    public String ask(@RequestParam String question) {
+    public String ask(@RequestParam String question, @RequestParam(required = false) String conversationId) {
         // 1. find chunks: only from our file, only the best few, only if close enough
         SearchRequest request = SearchRequest.builder()
                 .query(question)
@@ -167,13 +183,23 @@ public class AiController {
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
 
-        // 4. give the information + question to Llama
-        return chatClient
+        // 4. give the information (in the system rule) + question to Llama.
+        //    The information is NOT saved in memory, only the question and the answer are.
+        ChatClient.ChatClientRequestSpec prompt = chatClient
                 .prompt()
-                .system("Answer the question using only the information given. "
-                        + "If the answer is not in the information, say \"I don't know\". Keep the answer short.")
-                .user("Information:\n" + information + "\n\nQuestion: " + question)
-                .call()
-                .content();
+                .system(system -> system
+                        .text("Answer the question using only the information below. "
+                                + "If the answer is not in the information, say \"I don't know\". "
+                                + "Keep the answer short.\n\nInformation:\n{information}")
+                        .param("information", information))
+                .user(question);
+
+        // 5. conversationId given -> remember this conversation
+        if (conversationId != null) {
+            prompt = prompt
+                    .advisors(memoryAdvisor)
+                    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
+        }
+        return prompt.call().content();
     }
 }
