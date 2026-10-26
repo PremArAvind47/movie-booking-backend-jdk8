@@ -10,6 +10,8 @@ import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -116,11 +118,12 @@ public class AiController {
         );
     }
 
-    @GetMapping("/ai/load-file")
-    public Map<String, Object> loadFile() {
+    // runs once, automatically, when the app has finished starting
+    @EventListener(ApplicationReadyEvent.class)
+    public void loadFileOnStartup() {
         List<Document> chunks = splitFileIntoChunks();
         vectorStore.add(chunks);   // each chunk is turned into numbers and stored
-        return Map.of("storedChunks", chunks.size());
+        log.info("Loaded {} chunks from {} into the vector store", chunks.size(), moviesFile.getFilename());
     }
 
     private List<Document> splitFileIntoChunks() {
