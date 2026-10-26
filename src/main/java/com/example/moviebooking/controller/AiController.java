@@ -7,6 +7,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.TextReader;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -30,13 +31,19 @@ public class AiController {
     private final EmbeddingModel embeddingModel;
     private final VectorStore vectorStore;
     private final Resource moviesFile;
+    private final int topK;
+    private final double minScore;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
-                        @Value("classpath:movies.txt") Resource moviesFile) {
+                        @Value("classpath:movies.txt") Resource moviesFile,
+                        @Value("${rag.top-k}") int topK,
+                        @Value("${rag.min-score}") double minScore) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
         this.moviesFile = moviesFile;
+        this.topK = topK;
+        this.minScore = minScore;
     }
 
     @GetMapping("/ai")
@@ -137,18 +144,31 @@ public class AiController {
 
     @GetMapping("/ai/ask")
     public String ask(@RequestParam String question) {
-        // 1. find the chunks closest in meaning to the question
-        List<Document> found = vectorStore.similaritySearch(question);
+        // 1. find chunks: only from our file, only the best few, only if close enough
+        SearchRequest request = SearchRequest.builder()
+                .query(question)
+                .topK(topK)
+                .similarityThreshold(minScore)
+                .filterExpression("source == '" + moviesFile.getFilename() + "'")
+                .build();
+        List<Document> found = vectorStore.similaritySearch(request);
+        found.forEach(doc -> log.info("RAG chunk score={} text={}", doc.getScore(), doc.getText()));
 
-        // 2. join their text into one block of information
+        // 2. nothing close enough -> say "I don't know" (do not ask Llama)
+        if (found.isEmpty()) {
+            return "I don't know. The file has no information about that.";
+        }
+
+        // 3. join their text into one block of information
         String information = found.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
 
-        // 3. give the information + question to Llama
+        // 4. give the information + question to Llama
         return chatClient
                 .prompt()
-                .system("Answer the question using only the information given. Keep the answer short.")
+                .system("Answer the question using only the information given. "
+                        + "If the answer is not in the information, say \"I don't know\". Keep the answer short.")
                 .user("Information:\n" + information + "\n\nQuestion: " + question)
                 .call()
                 .content();

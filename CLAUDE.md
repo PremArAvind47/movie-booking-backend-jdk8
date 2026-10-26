@@ -29,7 +29,7 @@ then commit and push directly to `main`.
   Results are huge, so save to a file and extract the text with a script.
 
 **Status**
-- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6: DONE (user confirmed 22 Oct 2026). Added: movies.txt in resources, TextReader, paragraph chunks with metadata, /ai/load-file stores chunks (call once per app start). Extras were removed at the user's request. Part 7 (RAG): DONE (user confirmed 22 Oct 2026). `/ai/ask?question=...` = similaritySearch, join chunk text, system+user prompt to Llama. Verified with a question only the file answers ("one hour = seven years") AFTER calling /ai/load-file. Known weakness for Part 8: llama3.2 (3B) can garble facts and ignore "use only the information"; default search returns 4 chunks incl. irrelevant ones. Next: Part 8 (RAG engineering).
+- Parts 0-4: done. Part 5: DONE (code tested 12 Oct 2026; user confirmed they understand, 21 Oct 2026). They explained it back correctly (store built with embeddingModel, query becomes numbers, closest stored movies returned). Part 6: DONE (user confirmed 22 Oct 2026). Added: movies.txt in resources, TextReader, paragraph chunks with metadata, /ai/load-file stores chunks (call once per app start). Extras were removed at the user's request. Part 7 (RAG): DONE (user confirmed 22 Oct 2026). `/ai/ask?question=...` = similaritySearch, join chunk text, system+user prompt to Llama. Verified with a question only the file answers ("one hour = seven years") AFTER calling /ai/load-file. Known weakness for Part 8: llama3.2 (3B) can garble facts and ignore "use only the information"; default search returns 4 chunks incl. irrelevant ones. Part 8 (RAG engineering): code pushed 26 Oct 2026, NOT yet tested by the user and understanding NOT confirmed, so Part 8 is NOT done. `/ai/ask` now uses SearchRequest: topK (rag.top-k=2), similarityThreshold (rag.min-score=0.5, a GUESS, not tuned with real nomic-embed-text; user must tune in application.properties), metadata filter `source == 'movies.txt'` (excludes the Part 5 sample sentences), returns "I don't know" without calling Llama if no chunk passes, system prompt also says say "I don't know". Scores are logged (RAG chunk score=...). Mechanics tested here with a fake embedding model only.
 - Test result: Part 5 `/ai/search?query=space and time travel` returned Interstellar, Inception, Titanic, Dark Knight (default top 4 of 5). 
 - User tests endpoints in Postman (collection `personalProject`, folder `ga`).
 - Chats saved on the user's machine in `C:\PremAravind\D--PAD4U` are NOT yet reviewed.
@@ -78,7 +78,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 ## 24-part plan and progress
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
 3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, understood) |
-6 Document processing/chunking (done, understood) | 7 RAG (done, understood) | 8 RAG engineering (next) | 9 Memory | 10 Tool calling |
+6 Document processing/chunking (done, understood) | 7 RAG (done, understood) | 8 RAG engineering (code pushed, needs user test + understanding) | 9 Memory | 10 Tool calling |
 11 Agentic AI | 12 Multimodal | 13 Hallucination + grounding | 14 Guardrails + security |
 15 Testing + evaluation | 16 Observability | 17 Performance | 18 Cost + model selection |
 19 Cloud vs local | 20 Fine-tuning | 21 Production engineering | 22 Complete architecture |
@@ -95,6 +95,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 - **Part 4** `spring.ai.ollama.embedding.model=nomic-embed-text`, `/ai/embed?text=...` returned 768 numbers.
 - **Part 6** `src/main/resources/movies.txt`, `TextReader` reads it, `splitFileIntoChunks()` cuts it at blank lines into `Document`s with metadata (source, chunkNumber), `/ai/load-file` adds them to the vector store.
 - **Part 7** `/ai/ask`: RAG. Find chunks -> join text -> chatClient system rule + user (information + question) -> answer.
+- **Part 8** `/ai/ask` upgraded: SearchRequest with topK + similarityThreshold + filterExpression on metadata `source`; settings `rag.top-k`, `rag.min-score` in application.properties; no close chunk -> "I don't know".
 - **Part 5** `VectorStoreConfig` (in-memory `SimpleVectorStore`, 5 sample movies, embedded at startup) and
   `/ai/search?query=...`. Next step is to run
   `http://localhost:8080/ai/search?query=space and time travel`. Expect Interstellar and/or Inception.
@@ -125,10 +126,10 @@ Often says "you do it" for code edits, but wants commands only when working in g
 | `/ai/search?query=..` | Semantic search over the stored movies and file chunks |
 | `/ai/read-file` | Read `movies.txt` (1 Document, character count) |
 | `/ai/chunks` | Show the paragraph chunks of `movies.txt` |
-| `/ai/ask?question=..` | RAG: search chunks, give them to Llama, answer from them |
+| `/ai/ask?question=..` | RAG: search file chunks (top-K, min score, source filter), give them to Llama, "I don't know" if nothing close |
 | `/ai/load-file` | Store the chunks in the vector store (call once per app start) |
 
 ## Open items
-1. Start Part 8 (RAG engineering): Top-K, relevant vs irrelevant chunks, "I don't know" behaviour, better chunks.
+1. Part 8: user to test /ai/ask (after /ai/load-file) with a file question and an unrelated question; tune rag.min-score using the logged scores; then confirm understanding.
 2. If the old OpenAI key is still live anywhere, rotate it.
 3. Add the local chat folder `C:\PremAravind\D--PAD4U` to the repo (or paste it) so it can be reviewed too.
