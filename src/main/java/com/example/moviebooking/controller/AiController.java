@@ -1,6 +1,7 @@
 package com.example.moviebooking.controller;
 
 import com.example.moviebooking.dto.MovieInfo;
+import com.example.moviebooking.tools.MovieTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -38,12 +39,14 @@ public class AiController {
     private final int topK;
     private final double minScore;
     private final MessageChatMemoryAdvisor memoryAdvisor;
+    private final MovieTools movieTools;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
                         @Value("${rag.top-k}") int topK,
                         @Value("${rag.min-score}") double minScore,
-                        ChatMemory chatMemory) {
+                        ChatMemory chatMemory,
+                        MovieTools movieTools) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
@@ -51,6 +54,7 @@ public class AiController {
         this.topK = topK;
         this.minScore = minScore;
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        this.movieTools = movieTools;
     }
 
     @GetMapping("/ai")
@@ -148,6 +152,18 @@ public class AiController {
             }
         }
         return chunks;
+    }
+
+    @GetMapping("/ai/tools")
+    public String tools(@RequestParam String question) {
+        return chatClient
+                .prompt()
+                .system("You are a movie booking assistant. For seats and prices, always use the tools. "
+                        + "Never guess numbers.")
+                .tools(movieTools)          // the Java methods Llama may ask for
+                .user(question)
+                .call()
+                .content();
     }
 
     @GetMapping("/ai/chat")
