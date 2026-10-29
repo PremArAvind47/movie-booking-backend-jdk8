@@ -19,6 +19,12 @@ public class MovieTools {
     private static final Map<String, Integer> FREE_SEATS = Map.of("avengers", 42, "batman", 7, "dune", 120);
     private static final Map<String, Integer> PRICES = Map.of("avengers", 250, "batman", 200, "dune", 300);
 
+    @Tool(description = "Get the list of all movies that are showing now")
+    public String getMovieList() {
+        log.info("TOOL getMovieList called");
+        return "Avengers, Batman, Dune";
+    }
+
     @Tool(description = "Get how many seats are free right now for a movie")
     public String getFreeSeats(@ToolParam(description = "The movie name, for example Avengers") String movieName) {
         log.info("TOOL getFreeSeats called with movieName={}", movieName);

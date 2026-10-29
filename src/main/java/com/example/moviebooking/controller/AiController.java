@@ -166,6 +166,20 @@ public class AiController {
                 .content();
     }
 
+    @GetMapping("/ai/agent")
+    public String agent(@RequestParam String task) {
+        return chatClient
+                .prompt()
+                .system("You are a movie booking agent. Solve the task step by step. "
+                        + "Use the tools as many times as needed, one after another, "
+                        + "and use each result to decide the next step. "
+                        + "Answer only when you have all the facts. Never guess numbers.")
+                .tools(movieTools)
+                .user(task)
+                .call()
+                .content();
+    }
+
     @GetMapping("/ai/chat")
     public String chat(@RequestParam String conversationId, @RequestParam String message) {
         return chatClient
