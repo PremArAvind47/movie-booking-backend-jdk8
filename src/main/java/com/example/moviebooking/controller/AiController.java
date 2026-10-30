@@ -1,5 +1,6 @@
 package com.example.moviebooking.controller;
 
+import com.example.moviebooking.dto.GroundedAnswer;
 import com.example.moviebooking.dto.MovieInfo;
 import com.example.moviebooking.dto.TicketInfo;
 import com.example.moviebooking.tools.MovieTools;
@@ -172,7 +173,7 @@ public class AiController {
         log.info("Loaded {} chunks from {} into the vector store", chunks.size(), moviesFile.getFilename());
     }
 
-    // ===== Parts 7-8: RAG - answer from our file, say "I don't know" if it is not there =====
+    // ===== Parts 7-8 and 13: RAG - answer only from our file, and CHECK the answer is really in the file =====
 
     @GetMapping("/ai/ask")
     public String ask(@RequestParam String question, @RequestParam(required = false) String conversationId) {
@@ -196,13 +197,15 @@ public class AiController {
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
 
-        // 4. give the information (in the system rule) + question to Llama.
+        // 4. ask Llama for an answer AND the exact sentence that proves it (evidence).
         //    The information is NOT saved in memory, only the question and the answer are.
         ChatClient.ChatClientRequestSpec prompt = chatClient
                 .prompt()
                 .system(system -> system
                         .text("Answer the question using only the information below. "
-                                + "If the answer is not in the information, say \"I don't know\". "
+                                + "Copy the exact sentence from the information that proves your answer into \"evidence\". "
+                                + "If the information does not contain the answer, set \"found\" to false "
+                                + "and leave \"answer\" and \"evidence\" empty. "
                                 + "Keep the answer short.\n\nInformation:\n{information}")
                         .param("information", information))
                 .user(question);
@@ -213,7 +216,37 @@ public class AiController {
                     .advisors(memoryAdvisor)
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
         }
-        return prompt.call().content();
+        GroundedAnswer result = prompt.call().entity(GroundedAnswer.class);
+
+        // 6. grounding check in Java: is the evidence REALLY inside the chunks we found?
+        //    If not, Llama made it up, so we do not trust the answer.
+        if (result == null || !result.found() || isBlank(result.answer()) || isBlank(result.evidence())) {
+            return NOT_ENOUGH_INFORMATION;
+        }
+        String evidence = normalize(result.evidence());
+        Document source = found.stream()
+                .filter(doc -> normalize(doc.getText()).contains(evidence))
+                .findFirst()
+                .orElse(null);
+        if (source == null) {
+            log.warn("Answer rejected, evidence not found in the chunks: {}", result.evidence());
+            return NOT_ENOUGH_INFORMATION;
+        }
+
+        // 7. grounded answer + where it came from
+        return result.answer() + " (source: " + moviesFile.getFilename()
+                + ", chunk " + source.getMetadata().get("chunkNumber") + ")";
+    }
+
+    private static final String NOT_ENOUGH_INFORMATION = "I don't have enough information to answer that.";
+
+    private static boolean isBlank(String text) {
+        return text == null || text.isBlank();
+    }
+
+    // lower case + single spaces, so small differences in spacing do not matter
+    private static String normalize(String text) {
+        return text.toLowerCase().replaceAll("\\s+", " ").trim();
     }
 
     // ===== Part 9: memory (remember the conversation) =====
