@@ -65,6 +65,8 @@ public class AiController {
         this.visionModel = visionModel;
     }
 
+    // ===== Parts 1-2: ask Llama, with a rule (system) and extra info (context) =====
+
     @GetMapping("/ai")
     public String askAI(@RequestParam String question, @RequestParam(required = false) String context) {
         String userMessage = (context != null)
@@ -85,6 +87,8 @@ public class AiController {
         }
     }
 
+    // ===== Part 3: structured output (AI answer -> Java object) =====
+
     @GetMapping("/ai/movie-info")
     public MovieInfo getMovieInfo(@RequestParam String movieName) {
         log.debug("AI movie info for: {}", movieName);
@@ -100,6 +104,8 @@ public class AiController {
         }
     }
 
+    // ===== Part 4: embeddings (text -> numbers) =====
+
     @GetMapping("/ai/embed")
     public Map<String, Object> embed(@RequestParam String text) {
         float[] vector = embeddingModel.embed(text);
@@ -110,11 +116,15 @@ public class AiController {
         );
     }
 
+    // ===== Part 5: vector store search (search by meaning) =====
+
     @GetMapping("/ai/search")
     public List<String> search(@RequestParam String query) {
         List<Document> results = vectorStore.similaritySearch(query);
         return results.stream().map(Document::getText).toList();
     }
+
+    // ===== Part 6: read the file, cut it into chunks (and Part 8: store them at startup) =====
 
     @GetMapping("/ai/read-file")
     public Map<String, Object> readFile() {
@@ -133,14 +143,6 @@ public class AiController {
                 "chunkCount", chunks.size(),
                 "chunks", chunks.stream().map(Document::getText).toList()
         );
-    }
-
-    // runs once, automatically, when the app has finished starting
-    @EventListener(ApplicationReadyEvent.class)
-    public void loadFileOnStartup() {
-        List<Document> chunks = splitFileIntoChunks();
-        vectorStore.add(chunks);   // each chunk is turned into numbers and stored
-        log.info("Loaded {} chunks from {} into the vector store", chunks.size(), moviesFile.getFilename());
     }
 
     private List<Document> splitFileIntoChunks() {
@@ -162,54 +164,15 @@ public class AiController {
         return chunks;
     }
 
-    @GetMapping("/ai/tools")
-    public String tools(@RequestParam String question) {
-        return chatClient
-                .prompt()
-                .system("You are a movie booking assistant. For seats and prices, always use the tools. "
-                        + "Never guess numbers.")
-                .tools(movieTools)          // the Java methods Llama may ask for
-                .user(question)
-                .call()
-                .content();
+    // runs once, automatically, when the app has finished starting
+    @EventListener(ApplicationReadyEvent.class)
+    public void loadFileOnStartup() {
+        List<Document> chunks = splitFileIntoChunks();
+        vectorStore.add(chunks);   // each chunk is turned into numbers and stored
+        log.info("Loaded {} chunks from {} into the vector store", chunks.size(), moviesFile.getFilename());
     }
 
-    @GetMapping("/ai/agent")
-    public String agent(@RequestParam String task) {
-        return chatClient
-                .prompt()
-                .system("You are a movie booking agent. Solve the task step by step. "
-                        + "Use the tools as many times as needed, one after another, "
-                        + "and use each result to decide the next step. "
-                        + "Answer only when you have all the facts. Never guess numbers.")
-                .tools(movieTools)
-                .user(task)
-                .call()
-                .content();
-    }
-
-    @PostMapping("/ai/read-ticket")
-    public TicketInfo readTicket(@RequestParam("image") MultipartFile image) {
-        return chatClient
-                .prompt()
-                .options(OllamaChatOptions.builder().model(visionModel))   // use the model that can see
-                .user(user -> user
-                        .text("This is a photo of a movie ticket. Read it and give the movie name, the seat and the price.")
-                        .media(MimeTypeUtils.parseMimeType(image.getContentType()), image.getResource()))
-                .call()
-                .entity(TicketInfo.class);
-    }
-
-    @GetMapping("/ai/chat")
-    public String chat(@RequestParam String conversationId, @RequestParam String message) {
-        return chatClient
-                .prompt()
-                .advisors(memoryAdvisor)                                        // turn memory on
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))   // whose memory
-                .user(message)
-                .call()
-                .content();
-    }
+    // ===== Parts 7-8: RAG - answer from our file, say "I don't know" if it is not there =====
 
     @GetMapping("/ai/ask")
     public String ask(@RequestParam String question, @RequestParam(required = false) String conversationId) {
@@ -252,4 +215,62 @@ public class AiController {
         }
         return prompt.call().content();
     }
+
+    // ===== Part 9: memory (remember the conversation) =====
+
+    @GetMapping("/ai/chat")
+    public String chat(@RequestParam String conversationId, @RequestParam String message) {
+        return chatClient
+                .prompt()
+                .advisors(memoryAdvisor)                                        // turn memory on
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))   // whose memory
+                .user(message)
+                .call()
+                .content();
+    }
+
+    // ===== Part 10: tool calling (Llama asks, our Java runs) =====
+
+    @GetMapping("/ai/tools")
+    public String tools(@RequestParam String question) {
+        return chatClient
+                .prompt()
+                .system("You are a movie booking assistant. For seats and prices, always use the tools. "
+                        + "Never guess numbers.")
+                .tools(movieTools)          // the Java methods Llama may ask for
+                .user(question)
+                .call()
+                .content();
+    }
+
+    // ===== Part 11: agent (many tool calls, one after another) =====
+
+    @GetMapping("/ai/agent")
+    public String agent(@RequestParam String task) {
+        return chatClient
+                .prompt()
+                .system("You are a movie booking agent. Solve the task step by step. "
+                        + "Use the tools as many times as needed, one after another, "
+                        + "and use each result to decide the next step. "
+                        + "Answer only when you have all the facts. Never guess numbers.")
+                .tools(movieTools)
+                .user(task)
+                .call()
+                .content();
+    }
+
+    // ===== Part 12: multimodal (read a picture) =====
+
+    @PostMapping("/ai/read-ticket")
+    public TicketInfo readTicket(@RequestParam("image") MultipartFile image) {
+        return chatClient
+                .prompt()
+                .options(OllamaChatOptions.builder().model(visionModel))   // use the model that can see
+                .user(user -> user
+                        .text("This is a photo of a movie ticket. Read it and give the movie name, the seat and the price.")
+                        .media(MimeTypeUtils.parseMimeType(image.getContentType()), image.getResource()))
+                .call()
+                .entity(TicketInfo.class);
+    }
+
 }
