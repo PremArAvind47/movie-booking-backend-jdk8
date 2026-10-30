@@ -1,6 +1,7 @@
 package com.example.moviebooking.controller;
 
 import com.example.moviebooking.dto.MovieInfo;
+import com.example.moviebooking.dto.TicketInfo;
 import com.example.moviebooking.tools.MovieTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -16,9 +18,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,13 +45,15 @@ public class AiController {
     private final double minScore;
     private final MessageChatMemoryAdvisor memoryAdvisor;
     private final MovieTools movieTools;
+    private final String visionModel;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
                         @Value("${rag.top-k}") int topK,
                         @Value("${rag.min-score}") double minScore,
                         ChatMemory chatMemory,
-                        MovieTools movieTools) {
+                        MovieTools movieTools,
+                        @Value("${vision.model}") String visionModel) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
@@ -55,6 +62,7 @@ public class AiController {
         this.minScore = minScore;
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.movieTools = movieTools;
+        this.visionModel = visionModel;
     }
 
     @GetMapping("/ai")
@@ -178,6 +186,18 @@ public class AiController {
                 .user(task)
                 .call()
                 .content();
+    }
+
+    @PostMapping("/ai/read-ticket")
+    public TicketInfo readTicket(@RequestParam("image") MultipartFile image) {
+        return chatClient
+                .prompt()
+                .options(OllamaChatOptions.builder().model(visionModel))   // use the model that can see
+                .user(user -> user
+                        .text("This is a photo of a movie ticket. Read it and give the movie name, the seat and the price.")
+                        .media(MimeTypeUtils.parseMimeType(image.getContentType()), image.getResource()))
+                .call()
+                .entity(TicketInfo.class);
     }
 
     @GetMapping("/ai/chat")
