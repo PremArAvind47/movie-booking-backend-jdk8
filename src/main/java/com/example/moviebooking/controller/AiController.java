@@ -191,7 +191,9 @@ public class AiController {
                 .similarityThreshold(minScore)
                 .filterExpression("source == '" + moviesFile.getFilename() + "'")
                 .build();
+        long searchStart = System.currentTimeMillis();
         List<Document> found = vectorStore.similaritySearch(request);
+        log.info("TIMING search: {} ms, {} chunk(s) found", System.currentTimeMillis() - searchStart, found.size());
         found.forEach(doc -> log.info("RAG chunk score={} text={}", doc.getScore(), doc.getText()));
 
         // 2. nothing close enough -> say "I don't know" (do not ask Llama)
@@ -224,7 +226,9 @@ public class AiController {
                     .advisors(memoryAdvisor)
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
         }
+        long modelStart = System.currentTimeMillis();
         GroundedAnswer result = prompt.call().entity(GroundedAnswer.class);
+        log.info("TIMING model: {} ms", System.currentTimeMillis() - modelStart);
 
         // 6. grounding check in Java: is the evidence REALLY inside the chunks we found?
         //    If not, Llama made it up, so we do not trust the answer.

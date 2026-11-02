@@ -20,7 +20,7 @@
     <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="./logs"/>
 
     <property name="PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${APP_NAME}] [%thread] %logger{40} - %msg%n"/>
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${APP_NAME}] [%X{requestId:-none}] [%thread] %logger{40} - %msg%n"/>
 
     <!-- Console: what you see in IntelliJ / docker logs / kubectl logs -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
