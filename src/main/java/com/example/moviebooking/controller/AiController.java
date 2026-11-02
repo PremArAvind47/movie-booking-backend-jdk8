@@ -228,6 +228,7 @@ public class AiController {
         // 6. grounding check in Java: is the evidence REALLY inside the chunks we found?
         //    If not, Llama made it up, so we do not trust the answer.
         if (result == null || !result.found() || isBlank(result.answer()) || isBlank(result.evidence())) {
+            log.warn("Answer rejected, the model said not found or gave an empty answer or evidence: {}", result);
             return NOT_ENOUGH_INFORMATION;
         }
         String evidence = normalize(result.evidence());
