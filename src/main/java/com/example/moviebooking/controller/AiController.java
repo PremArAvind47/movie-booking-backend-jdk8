@@ -3,6 +3,7 @@ package com.example.moviebooking.controller;
 import com.example.moviebooking.dto.GroundedAnswer;
 import com.example.moviebooking.dto.MovieInfo;
 import com.example.moviebooking.dto.TicketInfo;
+import com.example.moviebooking.guard.InputGuard;
 import com.example.moviebooking.tools.MovieTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +49,7 @@ public class AiController {
     private final MessageChatMemoryAdvisor memoryAdvisor;
     private final MovieTools movieTools;
     private final String visionModel;
+    private final InputGuard inputGuard;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
@@ -54,7 +57,8 @@ public class AiController {
                         @Value("${rag.min-score}") double minScore,
                         ChatMemory chatMemory,
                         MovieTools movieTools,
-                        @Value("${vision.model}") String visionModel) {
+                        @Value("${vision.model}") String visionModel,
+                        InputGuard inputGuard) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
@@ -64,6 +68,7 @@ public class AiController {
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.movieTools = movieTools;
         this.visionModel = visionModel;
+        this.inputGuard = inputGuard;
     }
 
     // ===== Parts 1-2: ask Llama, with a rule (system) and extra info (context) =====
@@ -177,6 +182,8 @@ public class AiController {
 
     @GetMapping("/ai/ask")
     public String ask(@RequestParam String question, @RequestParam(required = false) String conversationId) {
+        inputGuard.check(question);   // Part 14: check the text before anything else
+
         // 1. find chunks: only from our file, only the best few, only if close enough
         SearchRequest request = SearchRequest.builder()
                 .query(question)
@@ -253,6 +260,7 @@ public class AiController {
 
     @GetMapping("/ai/chat")
     public String chat(@RequestParam String conversationId, @RequestParam String message) {
+        inputGuard.check(message);   // Part 14
         return chatClient
                 .prompt()
                 .advisors(memoryAdvisor)                                        // turn memory on
@@ -265,12 +273,15 @@ public class AiController {
     // ===== Part 10: tool calling (Llama asks, our Java runs) =====
 
     @GetMapping("/ai/tools")
-    public String tools(@RequestParam String question) {
+    public String tools(@RequestParam String question,
+                        @RequestHeader(value = "X-Role", defaultValue = "GUEST") String role) {
+        inputGuard.check(question);   // Part 14
         return chatClient
                 .prompt()
                 .system("You are a movie booking assistant. For seats and prices, always use the tools. "
                         + "Never guess numbers.")
                 .tools(movieTools)          // the Java methods Llama may ask for
+                .toolContext(Map.of("role", role))   // Part 14: who is asking (Java decides, not the AI)
                 .user(question)
                 .call()
                 .content();
@@ -279,7 +290,9 @@ public class AiController {
     // ===== Part 11: agent (many tool calls, one after another) =====
 
     @GetMapping("/ai/agent")
-    public String agent(@RequestParam String task) {
+    public String agent(@RequestParam String task,
+                        @RequestHeader(value = "X-Role", defaultValue = "GUEST") String role) {
+        inputGuard.check(task);   // Part 14
         return chatClient
                 .prompt()
                 .system("You are a movie booking agent. Solve the task step by step. "
@@ -287,6 +300,7 @@ public class AiController {
                         + "and use each result to decide the next step. "
                         + "Answer only when you have all the facts. Never guess numbers.")
                 .tools(movieTools)
+                .toolContext(Map.of("role", role))   // Part 14
                 .user(task)
                 .call()
                 .content();
