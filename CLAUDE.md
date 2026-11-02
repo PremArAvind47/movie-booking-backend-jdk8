@@ -79,8 +79,7 @@ Often says "you do it" for code edits, but wants commands only when working in g
 0 Local AI setup (done) | 1 Java to local LLM (done) | 2 Prompts, context, tokens (done) |
 3 Structured output (done) | 4 Embeddings (done) | 5 Vector database (done, understood) |
 6 Document processing/chunking (done, understood) | 7 RAG (done, understood) | 8 RAG engineering (done, understood) | 9 Memory (done, understood) | 10 Tool calling (done, understood) | 11 Agentic AI (done, understood) |
-12 Multimodal (done, understood) | 13 Hallucination + grounding (done, understood) | 14 Guardrails + security (done, understood) | 15 Testing + evaluation (done, understood) | 16 Observability (next) |
- | 17 Performance | 18 Cost + model selection |
+12 Multimodal (done, understood) | 13 Hallucination + grounding (done, understood) | 14 Guardrails + security (done, understood) | 15 Testing + evaluation (done, understood) | 16 Observability (next) | 17 Performance | 18 Cost + model selection |
 19 Cloud vs local | 20 Fine-tuning | 21 Production engineering | 22 Complete architecture |
 23 End-to-end debugging | 24 Interview-level design.
 
