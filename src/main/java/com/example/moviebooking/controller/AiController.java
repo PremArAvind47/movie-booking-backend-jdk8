@@ -211,6 +211,7 @@ public class AiController {
                 .system(system -> system
                         .text("Answer the question using only the information below. "
                                 + "Copy the exact sentence from the information that proves your answer into \"evidence\". "
+                                + "Write a short answer in \"answer\". When \"found\" is true, \"answer\" must never be empty. "
                                 + "If the information does not contain the answer, set \"found\" to false "
                                 + "and leave \"answer\" and \"evidence\" empty. "
                                 + "Keep the answer short.\n\nInformation:\n{information}")
@@ -227,8 +228,8 @@ public class AiController {
 
         // 6. grounding check in Java: is the evidence REALLY inside the chunks we found?
         //    If not, Llama made it up, so we do not trust the answer.
-        if (result == null || !result.found() || isBlank(result.answer()) || isBlank(result.evidence())) {
-            log.warn("Answer rejected, the model said not found or gave an empty answer or evidence: {}", result);
+        if (result == null || !result.found() || isBlank(result.evidence())) {
+            log.warn("Answer rejected, the model said not found or gave no evidence: {}", result);
             return NOT_ENOUGH_INFORMATION;
         }
         String evidence = normalize(result.evidence());
@@ -241,8 +242,14 @@ public class AiController {
             return NOT_ENOUGH_INFORMATION;
         }
 
-        // 7. grounded answer + where it came from
-        return result.answer() + " (source: " + moviesFile.getFilename()
+        // 7. grounded answer + where it came from.
+        //    If the model left the answer empty, the evidence sentence (from our file) is the answer.
+        String answer = result.answer();
+        if (isBlank(answer)) {
+            log.info("The model left the answer empty, using the evidence sentence instead");
+            answer = result.evidence();
+        }
+        return answer + " (source: " + moviesFile.getFilename()
                 + ", chunk " + source.getMetadata().get("chunkNumber") + ")";
     }
 
