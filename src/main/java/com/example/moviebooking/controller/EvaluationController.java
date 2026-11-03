@@ -1,5 +1,6 @@
 package com.example.moviebooking.controller;
 
+import com.example.moviebooking.cache.AnswerCache;
 import com.example.moviebooking.guard.InputGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,12 @@ public class EvaluationController {
 
     private final AiController ai;
     private final InputGuard inputGuard;
+    private final AnswerCache answerCache;
 
-    public EvaluationController(AiController ai, InputGuard inputGuard) {
+    public EvaluationController(AiController ai, InputGuard inputGuard, AnswerCache answerCache) {
         this.ai = ai;
         this.inputGuard = inputGuard;
+        this.answerCache = answerCache;
     }
 
     // one question in the quiz
@@ -38,6 +41,7 @@ public class EvaluationController {
 
     @GetMapping("/ai/evaluate")
     public Map<String, Object> evaluate(@RequestParam(defaultValue = "true") boolean agent) {
+        answerCache.clear();   // Part 17: the quiz must test the real model, not saved answers
         List<Check> checks = new ArrayList<>();
 
         // RAG: the answer must come from our file

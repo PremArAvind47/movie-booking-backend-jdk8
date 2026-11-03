@@ -1,5 +1,6 @@
 package com.example.moviebooking.controller;
 
+import com.example.moviebooking.cache.AnswerCache;
 import com.example.moviebooking.dto.GroundedAnswer;
 import com.example.moviebooking.dto.MovieInfo;
 import com.example.moviebooking.dto.TicketInfo;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +54,7 @@ public class AiController {
     private final MovieTools movieTools;
     private final String visionModel;
     private final InputGuard inputGuard;
+    private final AnswerCache answerCache;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
@@ -58,7 +63,8 @@ public class AiController {
                         ChatMemory chatMemory,
                         MovieTools movieTools,
                         @Value("${vision.model}") String visionModel,
-                        InputGuard inputGuard) {
+                        InputGuard inputGuard,
+                        AnswerCache answerCache) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
@@ -69,6 +75,7 @@ public class AiController {
         this.movieTools = movieTools;
         this.visionModel = visionModel;
         this.inputGuard = inputGuard;
+        this.answerCache = answerCache;
     }
 
     // ===== Parts 1-2: ask Llama, with a rule (system) and extra info (context) =====
@@ -178,11 +185,21 @@ public class AiController {
         log.info("Loaded {} chunks from {} into the vector store", chunks.size(), moviesFile.getFilename());
     }
 
-    // ===== Parts 7-8 and 13: RAG - answer only from our file, and CHECK the answer is really in the file =====
+    // ===== Parts 7-8, 13 and 17: RAG - answer only from our file, CHECK the answer, and cache it =====
 
     @GetMapping("/ai/ask")
     public String ask(@RequestParam String question, @RequestParam(required = false) String conversationId) {
         inputGuard.check(question);   // Part 14: check the text before anything else
+
+        // Part 17: same question asked before? give the saved answer, no search and no model call.
+        // (a conversation uses memory, so its answers are not shared through the cache)
+        if (conversationId == null) {
+            String cached = answerCache.get(question);
+            if (cached != null) {
+                log.info("CACHE hit: answer taken from the cache, no search and no model call");
+                return cached;
+            }
+        }
 
         // 1. find chunks: only from our file, only the best few, only if close enough
         SearchRequest request = SearchRequest.builder()
@@ -253,8 +270,12 @@ public class AiController {
             log.info("The model left the answer empty, using the evidence sentence instead");
             answer = result.evidence();
         }
-        return answer + " (source: " + moviesFile.getFilename()
+        String finalAnswer = answer + " (source: " + moviesFile.getFilename()
                 + ", chunk " + source.getMetadata().get("chunkNumber") + ")";
+        if (conversationId == null) {
+            answerCache.put(question, finalAnswer);   // Part 17: only good, checked answers are saved
+        }
+        return finalAnswer;
     }
 
     private static final String NOT_ENOUGH_INFORMATION = "I don't have enough information to answer that.";
@@ -332,4 +353,17 @@ public class AiController {
                 .entity(TicketInfo.class);
     }
 
+
+    // ===== Part 17: streaming (words appear while the model is still writing) =====
+
+    @GetMapping(value = "/ai/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> stream(@RequestParam String question) {
+        inputGuard.check(question);
+        return chatClient
+                .prompt()
+                .system("You are a helpful movie assistant. Keep the answer short.")
+                .user(question)
+                .stream()          // instead of .call(): pieces arrive one by one
+                .content();
+    }
 }
