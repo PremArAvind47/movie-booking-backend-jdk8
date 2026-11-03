@@ -1,6 +1,7 @@
 package com.example.moviebooking.controller;
 
 import com.example.moviebooking.cache.AnswerCache;
+import com.example.moviebooking.cost.CostEstimator;
 import com.example.moviebooking.dto.GroundedAnswer;
 import com.example.moviebooking.dto.MovieInfo;
 import com.example.moviebooking.dto.TicketInfo;
@@ -9,6 +10,8 @@ import com.example.moviebooking.tools.MovieTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
@@ -55,6 +58,7 @@ public class AiController {
     private final String visionModel;
     private final InputGuard inputGuard;
     private final AnswerCache answerCache;
+    private final CostEstimator costEstimator;
 
     public AiController(ChatClient.Builder builder, EmbeddingModel embeddingModel, VectorStore vectorStore,
                         @Value("classpath:movies.txt") Resource moviesFile,
@@ -64,7 +68,8 @@ public class AiController {
                         MovieTools movieTools,
                         @Value("${vision.model}") String visionModel,
                         InputGuard inputGuard,
-                        AnswerCache answerCache) {
+                        AnswerCache answerCache,
+                        CostEstimator costEstimator) {
         this.chatClient = builder.build();
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
@@ -76,6 +81,7 @@ public class AiController {
         this.visionModel = visionModel;
         this.inputGuard = inputGuard;
         this.answerCache = answerCache;
+        this.costEstimator = costEstimator;
     }
 
     // ===== Parts 1-2: ask Llama, with a rule (system) and extra info (context) =====
@@ -244,8 +250,11 @@ public class AiController {
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
         }
         long modelStart = System.currentTimeMillis();
-        GroundedAnswer result = prompt.call().entity(GroundedAnswer.class);
+        // responseEntity gives the answer AND the full response (it has the token counts)
+        var modelReply = prompt.call().responseEntity(GroundedAnswer.class);
+        GroundedAnswer result = modelReply.entity();
         log.info("TIMING model: {} ms", System.currentTimeMillis() - modelStart);
+        logCost(modelReply.response());
 
         // 6. grounding check in Java: is the evidence REALLY inside the chunks we found?
         //    If not, Llama made it up, so we do not trust the answer.
@@ -276,6 +285,19 @@ public class AiController {
             answerCache.put(question, finalAnswer);   // Part 17: only good, checked answers are saved
         }
         return finalAnswer;
+    }
+
+    // Part 18: tokens used by the model call, and what a paid cloud model would charge for them
+    private void logCost(ChatResponse response) {
+        Usage usage = response == null ? null : response.getMetadata().getUsage();
+        if (usage == null || usage.getPromptTokens() == null || usage.getCompletionTokens() == null) {
+            log.info("COST: the model did not report token counts");
+            return;
+        }
+        int in = usage.getPromptTokens();
+        int out = usage.getCompletionTokens();
+        log.info("COST tokens: {} in + {} out; local model = $0, same call on a paid cloud model (example prices) = ${}",
+                in, out, String.format("%.5f", costEstimator.estimate(in, out)));
     }
 
     private static final String NOT_ENOUGH_INFORMATION = "I don't have enough information to answer that.";
