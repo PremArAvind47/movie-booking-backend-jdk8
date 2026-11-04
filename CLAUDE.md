@@ -18,6 +18,7 @@ then commit and push directly to `main`.
 - Lesson learned: the user gets lost when I explain library internals. Explain only what THEY need, with everyday analogies, and check understanding with a question in their own words. Always compile-check or say "not compiled" before giving code (I once gave wrong code: `vectorStore.add(movie)` needs a List).
 - Test lesson: the store is in memory and is reloaded automatically at every app start (since Part 8; before that `/ai/load-file` had to be called). A test is only meaningful if the answer can NOT come from the model's own training (I wrongly said RAG worked on a Titanic question Llama already knew).
 - **Do only what the plan needs. No extra endpoints, features or "bonus" code unless the user asks.** (User said this on 22 Oct 2026 after I added extra endpoints in Part 6.)
+- The project is for LOCAL LEARNING only (user said so, 4 Nov 2026), not for a company or real users. Do not frame check questions as company/production cases; keep them about their own project.
 - A session may be told to use a specific branch. If it differs from `main`, tell the user and follow their latest instruction.
 
 **Environment limits learned**
