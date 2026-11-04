@@ -26,6 +26,15 @@ class AiExceptionHandlerTest {
     }
 
     @Test
+    void streamingConnectionRefusedGives503() {
+        var request = new org.springframework.web.reactive.function.client.WebClientRequestException(
+                new ConnectException("Connection refused"), org.springframework.http.HttpMethod.POST,
+                java.net.URI.create("http://localhost:11434/api/chat"), org.springframework.http.HttpHeaders.EMPTY);
+        var response = handler.handleModelNotReachable(request);
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+    }
+
+    @Test
     void socketTimeoutGives504() {
         var response = handler.handleModelNotReachable(
                 new ResourceAccessException("I/O error", new SocketTimeoutException("Read timed out")));

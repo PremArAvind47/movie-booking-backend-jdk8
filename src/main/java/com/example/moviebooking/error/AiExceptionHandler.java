@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import java.util.Map;
 
@@ -19,8 +20,9 @@ public class AiExceptionHandler {
 
     // The model did not answer in time -> 504
     // Ollama is not running or not reachable -> 503
-    @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<Map<String, String>> handleModelNotReachable(ResourceAccessException e) {
+    // ResourceAccessException = normal calls. WebClientRequestException = the streaming call (/ai/stream).
+    @ExceptionHandler({ResourceAccessException.class, WebClientRequestException.class})
+    public ResponseEntity<Map<String, String>> handleModelNotReachable(Exception e) {
         if (isTimeout(e)) {
             log.warn("The AI model did not answer in time: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
