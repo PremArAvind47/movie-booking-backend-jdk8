@@ -143,19 +143,6 @@ public class AiController {
         return results.stream().map(Document::getText).toList();
     }
 
-    // ===== Asked by the user (10 Nov 2026), not a numbered part: remember a fact in the vector store =====
-    // It is saved with source = "memory". /ai/search can find it. /ai/ask does NOT use it yet
-    // (it only searches source = movies.txt). The store is in RAM, so it is lost on restart.
-
-    @GetMapping("/ai/remember")
-    public Map<String, Object> remember(@RequestParam String text) {
-        inputGuard.check(text);   // same checks as the other endpoints (empty, too long, trick phrases)
-        String fact = text.trim();
-        vectorStore.add(List.of(new Document(fact, Map.of("source", "memory"))));
-        log.info("REMEMBERED: {}", fact);
-        return Map.of("saved", true, "text", fact);
-    }
-
     // ===== Part 6: read the file, cut it into chunks (and Part 8: store them at startup) =====
 
     @GetMapping("/ai/read-file")
@@ -347,7 +334,8 @@ public class AiController {
         return chatClient
                 .prompt()
                 .system("You are a movie booking assistant. For seats and prices, always use the tools. "
-                        + "Never guess numbers.")
+                        + "Never guess numbers. "
+                        + "If the user asks you to remember, keep or note something, use the rememberFact tool.")
                 .tools(movieTools)          // the Java methods Llama may ask for
                 .toolContext(Map.of("role", role))   // Part 14: who is asking (Java decides, not the AI)
                 .user(question)

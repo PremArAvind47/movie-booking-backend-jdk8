@@ -4,9 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 // Java methods that Llama is allowed to ask for. Llama never runs them itself: it only asks,
@@ -15,6 +18,12 @@ import java.util.Map;
 public class MovieTools {
 
     private static final Logger log = LoggerFactory.getLogger(MovieTools.class);
+
+    private final VectorStore vectorStore;
+
+    public MovieTools(VectorStore vectorStore) {
+        this.vectorStore = vectorStore;
+    }
 
     // sample data only Java knows (Llama cannot know these numbers)
     private static final Map<String, Integer> FREE_SEATS = Map.of("avengers", 42, "batman", 7, "dune", 120);
@@ -64,5 +73,18 @@ public class MovieTools {
             return "Movie not found. Available movies: Avengers, Batman, Dune.";
         }
         return "A ticket for " + movieName + " costs " + price + " rupees.";
+    }
+
+    // The model decides when the user wants something remembered. Java saves it in the vector store
+    // (label source = "memory"). The store is in RAM, so it is lost on restart.
+    @Tool(description = "Save a fact the user wants you to remember, for example 'my favourite colour is green'. "
+            + "Use it only when the user asks to remember, keep or note something.")
+    public String rememberFact(@ToolParam(description = "The fact to remember, as one short sentence") String fact) {
+        log.info("TOOL rememberFact called with fact={}", fact);
+        if (fact == null || fact.isBlank()) {
+            return "Nothing to save.";
+        }
+        vectorStore.add(List.of(new Document(fact.trim(), Map.of("source", "memory"))));
+        return "Saved: " + fact.trim();
     }
 }
