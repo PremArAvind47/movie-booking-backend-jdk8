@@ -335,6 +335,7 @@ public class AiController {
                 .prompt()
                 .system("You are a movie booking assistant. For seats and prices, always use the tools. "
                         + "Never guess numbers. "
+                        + "If a tool needs a value the user did not give, ask the user. Never guess. "
                         + "If the user asks you to remember, keep or note something, use the rememberFact tool.")
                 .tools(movieTools)          // the Java methods Llama may ask for
                 .toolContext(Map.of("role", role))   // Part 14: who is asking (Java decides, not the AI)

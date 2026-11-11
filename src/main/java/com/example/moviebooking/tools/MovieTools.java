@@ -37,7 +37,7 @@ public class MovieTools {
     // The role comes from our Java code (ToolContext), never from the AI.
     // The AI can only ASK for this tool. Java decides if the user is allowed.
     @Tool(description = "Get the private details (name, phone, email) of a customer by customer id")
-    public String getCustomerDetails(@ToolParam(description = "The customer id, for example 101") int customerId,
+    public String getCustomerDetails(@ToolParam(description = "The customer id the user gave, for example 101. Do not invent one.") int customerId,
                                      ToolContext toolContext) {
         Object role = toolContext.getContext().get("role");
         log.info("TOOL getCustomerDetails called with customerId={} by role={}", customerId, role);
