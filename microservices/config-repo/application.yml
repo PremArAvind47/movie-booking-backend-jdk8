@@ -1,0 +1,32 @@
+# Shared by every service (config server serves this file to all clients).
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    registry-fetch-interval-seconds: 5      # DEMO: see new services quickly
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 5    # DEMO: heartbeat every 5 s
+    lease-expiration-duration-in-seconds: 15
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
+  endpoint:
+    health:
+      probes:
+        enabled: true                       # /actuator/health/liveness and /readiness
+      show-details: never
+
+server:
+  shutdown: graceful                        # finish running requests before stopping
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+logging:
+  pattern:
+    level: "%5p [%X{requestId:-none}]"      # every log line shows the request id

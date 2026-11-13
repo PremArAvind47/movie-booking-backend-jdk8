@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: discovery-server
+
+server:
+  port: 8761
+  shutdown: graceful
+
+eureka:
+  client:
+    # this server is the registry itself, so it does not register with itself or fetch from anybody
+    register-with-eureka: false
+    fetch-registry: false
+  server:
+    # DEMO settings: remove dead services quickly so a failure is visible in seconds.
+    # In production keep self-preservation ON (it protects the registry when the network has problems).
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 5000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
