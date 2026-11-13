@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+booking:
+  max-seats-per-booking: 6      # change it, then POST /actuator/refresh
+
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true           # every Feign call goes through a circuit breaker
+      client:
+        config:
+          default:
+            connect-timeout: 1000   # ms: give up connecting after 1 s
+            read-timeout: 2000      # ms: give up waiting for the answer after 2 s
+
+resilience:
+  failure-rate-threshold: 50    # open the circuit when 50% of the last calls failed
+  minimum-calls: 5              # but only after at least 5 calls
+  open-wait-seconds: 10         # stay open for 10 s, then test with a few calls
+  timeout-seconds: 5            # one call (with its retry) may take 5 s at most
