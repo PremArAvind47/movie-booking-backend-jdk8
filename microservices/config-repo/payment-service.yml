@@ -1,0 +1,5 @@
+server:
+  port: 8083
+
+payment:
+  decline-above: 1000     # a payment above this many rupees is declined (change it, then POST /actuator/refresh)

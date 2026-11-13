@@ -28,6 +28,8 @@
         <module>platform-starter</module>
         <module>discovery-server</module>
         <module>config-server</module>
+        <module>movie-service</module>
+        <module>payment-service</module>
     </modules>
 
     <dependencyManagement>
