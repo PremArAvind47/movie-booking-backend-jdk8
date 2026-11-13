@@ -16,6 +16,9 @@ eureka:
     # In production keep self-preservation ON (it protects the registry when the network has problems).
     enable-self-preservation: false
     eviction-interval-timer-in-ms: 5000
+    # DEMO: answer from the live registry. The default read-only cache refreshes only every 30 s,
+    # so a new service would stay invisible for up to 30 s. (In production the cache protects the server.)
+    use-read-only-response-cache: false
 
 management:
   endpoints:

@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000      # ms
+            response-timeout: 10s      # a service that does not answer in 10 s gives a 504
+          default-filters:
+            # Retry ONLY GET requests (reading is safe to repeat). Never POST: a repeated booking could book twice.
+            - name: Retry
+              args:
+                retries: 2
+                methods: GET
+                series: SERVER_ERROR
+                exceptions: java.io.IOException, java.util.concurrent.TimeoutException
+          routes:
+            # ONLY these two public APIs are exposed. "lb://name" = find the service in Eureka and
+            # spread the calls over all running copies.
+            # /api/v1/reservations and /api/v1/payments are INTERNAL: there is no route, so they are not reachable from outside.
+            - id: movies
+              uri: lb://movie-service
+              predicates:
+                - Path=/api/v1/movies/**
+            - id: bookings
+              uri: lb://booking-service
+              predicates:
+                - Path=/api/v1/bookings/**
+
+logging:
+  pattern:
+    level: "%5p"          # the gateway writes the request id inside the message (the log context is not used in reactive code)

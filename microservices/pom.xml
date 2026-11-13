@@ -31,6 +31,7 @@
         <module>movie-service</module>
         <module>payment-service</module>
         <module>booking-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <dependencyManagement>

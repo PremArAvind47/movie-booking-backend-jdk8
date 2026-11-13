@@ -1,0 +1,7 @@
+# Only the minimum lives here: the name, and where to find the Config Server.
+# Everything else (port, Eureka, rules) comes from the Config Server (config-repo/api-gateway.yml).
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"

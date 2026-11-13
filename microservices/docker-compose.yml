@@ -1,0 +1,132 @@
+# The whole system with one command:   docker compose up --build
+# Start order: config-server and discovery-server first, then the services, then the gateway.
+# Only the gateway is the real front door. Ports 8761 (Eureka dashboard) and 8888 (config) are
+# published ONLY for learning: remove them in production. The business services are NOT published.
+services:
+  config-server:
+    build:
+      context: .
+      args:
+        MODULE: config-server
+    environment:
+      CONFIG_REPO_PATH: file:/config-repo/
+    volumes:
+      - ./config-repo:/config-repo:ro        # the settings files; change one, then POST /actuator/refresh
+    ports:
+      - "8888:8888"                          # learning only
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  discovery-server:
+    build:
+      context: .
+      args:
+        MODULE: discovery-server
+    ports:
+      - "8761:8761"                          # learning only: the Eureka dashboard
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  movie-service:
+    build:
+      context: .
+      args:
+        MODULE: movie-service
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      args:
+        MODULE: payment-service
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  booking-service:
+    build:
+      context: .
+      args:
+        MODULE: booking-service
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URL: http://discovery-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      movie-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: .
+      args:
+        MODULE: api-gateway
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URL: http://discovery-server:8761/eureka
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      movie-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped

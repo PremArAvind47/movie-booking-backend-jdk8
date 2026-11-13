@@ -1,6 +1,8 @@
 package com.example.cinema.movie;
 
 import com.example.cinema.platform.ApiException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,8 @@ import java.util.Map;
  */
 @Service
 public class SeatInventory {
+
+    private static final Logger log = LoggerFactory.getLogger(SeatInventory.class);
 
     private final List<Movie> movies = List.of(
             new Movie(1L, "Avengers", 250),
@@ -46,6 +50,7 @@ public class SeatInventory {
         freeSeats.put(movieId, free - seats);
         Reservation reservation = new Reservation(key, movieId, seats);
         reservations.put(key, reservation);
+        log.info("Reserved {} seat(s) of {} for booking {}", seats, movie.title(), key);
         return reservation;
     }
 
@@ -54,6 +59,7 @@ public class SeatInventory {
         Reservation reservation = reservations.remove(key);
         if (reservation != null) {
             freeSeats.merge(reservation.movieId(), reservation.seats(), Integer::sum);
+            log.info("Released {} seat(s) of movie {} for booking {}", reservation.seats(), reservation.movieId(), key);
         }
     }
 
