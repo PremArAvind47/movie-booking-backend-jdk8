@@ -1,5 +1,7 @@
-server:
-  port: 8083
-
-payment:
-  decline-above: 1000     # a payment above this many rupees is declined (change it, then POST /actuator/refresh)
+# OLD YAML VERSION - NOT USED (all lines are commented out). The active file is payment-service.properties in the same folder.
+#
+# server:
+#   port: 8083
+#
+# payment:
+#   decline-above: 1000     # a payment above this many rupees is declined (change it, then POST /actuator/refresh)

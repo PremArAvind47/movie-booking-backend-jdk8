@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
-/** Comes from the Config Server (config-repo/booking-service.yml). Refreshable without a restart. */
+/** Comes from the Config Server (config-repo/booking-service.properties). Refreshable without a restart. */
 @Component
 @RefreshScope
 public class BookingRules {

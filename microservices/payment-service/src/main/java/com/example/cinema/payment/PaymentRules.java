@@ -5,7 +5,7 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
 /**
- * A setting that comes from the Config Server (config-repo/payment-service.yml).
+ * A setting that comes from the Config Server (config-repo/payment-service.properties).
  * @RefreshScope means: after POST /actuator/refresh the new value is used WITHOUT a restart.
  */
 @Component

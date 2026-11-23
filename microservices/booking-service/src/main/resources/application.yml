@@ -1,7 +1,9 @@
-# Only the minimum lives here: the name, and where to find the Config Server.
-# Everything else (port, Eureka, rules) comes from the Config Server (config-repo/booking-service.yml).
-spring:
-  application:
-    name: booking-service
-  config:
-    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+# OLD YAML VERSION - NOT USED (all lines are commented out). The active file is application.properties in the same folder.
+#
+# # Only the minimum lives here: the name, and where to find the Config Server.
+# # Everything else (port, Eureka, rules) comes from the Config Server (config-repo/booking-service.yml).
+# spring:
+#   application:
+#     name: booking-service
+#   config:
+#     import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"

@@ -3,7 +3,7 @@ package com.example.cinema.gateway;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/** The only door from the outside. Routes are in config-repo/api-gateway.yml. */
+/** The only door from the outside. Routes are in config-repo/api-gateway.properties. */
 @SpringBootApplication
 public class ApiGatewayApplication {
 

@@ -83,7 +83,7 @@ curl localhost:8080/api/v1/bookings
 1. **Payment declined, seats come back.** Book 5 seats of Dune (`"movieId":3,"seats":5`): HTTP 402. Check `GET /api/v1/movies/3`: still 120 free seats.
 2. **A service dies.** Stop payment-service (`docker compose stop payment-service`). Book: HTTP 503 `PAYMENT_SERVICE_UNAVAILABLE`, and the seats are released. After a few failures the **circuit opens** and answers fail in about 25 ms (no waiting). Start it again: bookings work again by themselves.
 3. **Gateway when a service is gone.** Stop movie-service and call `GET /api/v1/movies`: HTTP 503 in the standard error format.
-4. **Change a setting without a restart.** Edit `config-repo/booking-service.yml` (`booking.max-seats-per-booking: 2`), then `curl -X POST <booking-service>:8082/actuator/refresh` (with Docker the business services are not published; use `docker compose exec booking-service wget -qO- --post-data= http://localhost:8082/actuator/refresh`). Booking 3 seats now gives `TOO_MANY_SEATS`.
+4. **Change a setting without a restart.** Edit `config-repo/booking-service.properties` (`booking.max-seats-per-booking=2`), then `curl -X POST <booking-service>:8082/actuator/refresh` (with Docker the business services are not published; use `docker compose exec booking-service wget -qO- --post-data= http://localhost:8082/actuator/refresh`). Booking 3 seats now gives `TOO_MANY_SEATS`.
 5. **Follow one request through all services.** `curl -H "X-Request-Id: my-test-1" ...` then search the logs: `docker compose logs | grep my-test-1` shows the same id in gateway, booking, movie and payment.
 6. **Internal APIs are hidden.** `GET /api/v1/reservations/x` and `POST /api/v1/payments` at the gateway: 404 `ROUTE_NOT_FOUND`.
 
@@ -91,14 +91,14 @@ curl localhost:8080/api/v1/bookings
 
 | Practice | Where |
 |---|---|
-| Service discovery by name, no host or port in the code | `discovery-server`, `@FeignClient(name = "movie-service")`, `lb://` routes in `config-repo/api-gateway.yml` |
+| Service discovery by name, no host or port in the code | `discovery-server`, `@FeignClient(name = "movie-service")`, `lb://` routes in `config-repo/api-gateway.properties` |
 | Central settings, change without restart | `config-server`, `config-repo/`, `@RefreshScope` in `BookingRules` and `PaymentRules` |
-| One public front door, internal APIs hidden | `config-repo/api-gateway.yml` (only 2 routes) and Docker ports (only the gateway is published) |
-| Circuit breaker, timeouts, fallback | `ResilienceConfig`, `config-repo/booking-service.yml`, `*FallbackFactory` |
+| One public front door, internal APIs hidden | `config-repo/api-gateway.properties` (only 2 routes) and Docker ports (only the gateway is published) |
+| Circuit breaker, timeouts, fallback | `ResilienceConfig`, `config-repo/booking-service.properties`, `*FallbackFactory` |
 | Retries only where safe | Feign retry works because every call is **idempotent** (booking id as key); the gateway retries **GET only** |
 | Undo of a half-done booking (saga) | `BookingService.fail(...)` |
 | Business errors do not trip the circuit breaker | `ignoreExceptions(ApiException.class)` + `DownstreamErrorDecoder` (4xx = answer, 5xx = failure) |
-| Request id across services and in every log line | `RequestIdGlobalFilter` (gateway), `RequestIdFilter` (platform-starter), log pattern in `config-repo/application.yml` |
+| Request id across services and in every log line | `RequestIdGlobalFilter` (gateway), `RequestIdFilter` (platform-starter), log pattern in `config-repo/application.properties` |
 | One error JSON format everywhere (also from the gateway) | `GlobalExceptionHandler`, `GatewayErrorHandler` |
 | Health checks, graceful shutdown | Actuator `/actuator/health/readiness`, `server.shutdown: graceful`, Docker `healthcheck` and start order |
 | Small container, not root, memory aware | `Dockerfile` |
@@ -107,7 +107,7 @@ curl localhost:8080/api/v1/bookings
 
 ## Demo settings you must change for production
 
-- Eureka: `enable-self-preservation: false`, `use-read-only-response-cache: false`, short leases and fetch intervals (`config-repo/application.yml`, `discovery-server`). They make changes visible in seconds. In production keep the safe defaults.
+- Eureka: `eureka.server.enable-self-preservation=false`, `eureka.server.use-read-only-response-cache=false`, short leases and fetch intervals (`config-repo/application.properties`, `discovery-server`). They make changes visible in seconds. In production keep the safe defaults.
 - Spring Cloud LoadBalancer cache `ttl: 5s` (default 35 s).
 - Ports 8761 and 8888 are published only for learning.
 

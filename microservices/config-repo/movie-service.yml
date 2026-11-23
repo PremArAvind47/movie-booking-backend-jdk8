@@ -1,2 +1,4 @@
-server:
-  port: 8081
+# OLD YAML VERSION - NOT USED (all lines are commented out). The active file is movie-service.properties in the same folder.
+#
+# server:
+#   port: 8081
