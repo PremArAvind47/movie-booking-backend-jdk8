@@ -2,11 +2,12 @@ package com.example.cinema.movie;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,9 +28,9 @@ public class ReservationController {
         return inventory.reserve(request.reservationKey(), request.movieId(), request.seats());
     }
 
-    @DeleteMapping("/{reservationKey}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void release(@PathVariable String reservationKey) {
+    @RequestMapping(value = "/reservationDelete", method = RequestMethod.DELETE)
+    public ResponseEntity<Void> release(@RequestParam("reservationKey") String reservationKey) {
         inventory.release(reservationKey);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

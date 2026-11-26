@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Calls movie-service. The name "movie-service" is looked up in Eureka (no host or port in the code),
@@ -24,6 +25,6 @@ public interface MovieClient {
     @PostMapping("/api/v1/reservations")
     ReservationDto reserve(@RequestBody ReserveRequest request, @RequestHeader("X-Request-Id") String requestId);
 
-    @DeleteMapping("/api/v1/reservations/{key}")
-    void release(@PathVariable("key") String key, @RequestHeader("X-Request-Id") String requestId);
+    @DeleteMapping("/api/v1/reservations/reservationDelete")
+    void release(@RequestParam("reservationKey") String key, @RequestHeader("X-Request-Id") String requestId);
 }
