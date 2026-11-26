@@ -94,7 +94,7 @@ curl localhost:8080/api/v1/bookings
 | Service discovery by name, no host or port in the code | `discovery-server`, `@FeignClient(name = "movie-service")`, `lb://` routes in `config-repo/api-gateway.properties` |
 | Central settings, change without restart | `config-server`, `config-repo/`, `@RefreshScope` in `BookingRules` and `PaymentRules` |
 | One public front door, internal APIs hidden | `config-repo/api-gateway.properties` (only 2 routes) and Docker ports (only the gateway is published) |
-| Circuit breaker, timeouts, fallback | `ResilienceConfig`, `config-repo/booking-service.properties`, `*FallbackFactory` |
+| Circuit breaker, timeouts, fallback | the `resilience4j.*` keys in `config-repo/booking-service.properties`, `*FallbackFactory` |
 | Retries only where safe | Feign retry works because every call is **idempotent** (booking id as key); the gateway retries **GET only** |
 | Undo of a half-done booking (saga) | `BookingService.fail(...)` |
 | Business errors do not trip the circuit breaker | `ignoreExceptions(ApiException.class)` + `DownstreamErrorDecoder` (4xx = answer, 5xx = failure) |
